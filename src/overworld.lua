@@ -7,6 +7,7 @@ local sound = require 'vendor/TEsound'
 local Player = require 'player'
 local state = Gamestate.new()
 local Character = require 'character'
+local Client = require 'client'
 
 local map = {}
 map.tileWidth = 12
@@ -279,10 +280,10 @@ function state:keypressed( button )
 
         local level = Gamestate.get(self.zone.level)
 
-        local coordinates = level.default_position
-        level.player = Player.factory() --no collider necessary yet
+        --local coordinates = level.default_position
+        --local player = Player.factory() --no collider necessary yet
         --set the position before the switch to prevent automatic exiting from touching instant doors
-        level.player.position = {x=coordinates.x, y=coordinates.y} -- Copy, or player position corrupts entrance data
+        --level.player.position = {x=coordinates.x, y=coordinates.y} -- Copy, or player position corrupts entrance data
 
         Gamestate.switch(self.zone.level)
     end

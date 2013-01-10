@@ -1,6 +1,5 @@
 local anim8 = require 'vendor/anim8'
 local Timer = require 'vendor/timer'
-local sound = require 'vendor/TEsound'
 
 local characters = {}
 
@@ -124,7 +123,6 @@ function Character:respawn()
     self.warpin = true
     self:current().animations.warp:gotoFrame(1)
     self:current().animations.warp:resume()
-    sound.playSfx( "respawn" )
     Timer.add(0.30, function() self.warpin = false end)
 end
 
@@ -143,5 +141,11 @@ function Character:findRelatedCostume( char )
 end
 
 Character:reset()
+
+function Character.new()
+    local character = {}
+    setmetatable(character, Character)
+    return character
+end
 
 return Character

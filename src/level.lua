@@ -11,6 +11,7 @@ local sound = require 'vendor/TEsound'
 local controls = require 'controls'
 local HUD = require 'hud'
 local music = {}
+require 'vendor/lube'
 
 local node_cache = {}
 local tile_cache = {}
@@ -23,6 +24,7 @@ local Platform = require 'nodes/platform'
 local Wall = require 'nodes/wall'
 
 local ach = (require 'achievements').new()
+local Client = require 'client'
 
 local function limit( x, min, max )
     return math.min(math.max(x,min),max)
@@ -149,6 +151,7 @@ function Level.new(name)
 
     level.over = false
     level.name = name
+    level.client = Client.getSingleton()
 
     assert( love.filesystem.exists( "maps/" .. name .. ".lua" ),
             "maps/" .. name .. ".lua not found.\n\n" ..
@@ -168,7 +171,7 @@ function Level.new(name)
 
     level:panInit()
 
-    level.player = Player.factory(level.collider)
+    level.players = {}
     level.boundary = {
         width =level.map.width  * level.map.tilewidth,
         height=level.map.height * level.map.tileheight
@@ -221,7 +224,6 @@ function Level.new(name)
         end
     end
 
-    level.player = player
     level:restartLevel()
     return level
 end
@@ -292,47 +294,17 @@ function Level:init()
 end
 
 function Level:update(dt)
-    Tween.update(dt)
-    self.player:update(dt)
-    ach:update(dt)
-
-    -- falling off the bottom of the map
-    if self.player.position.y - self.player.height > self.map.height * self.map.tileheight then
-        self.player.health = 0
-        self.player.dead = true
-    end
-
-    -- start death sequence
-    if self.player.dead and not self.over then
-        ach:achieve('die')
-        sound.stopMusic()
-        sound.playSfx( 'death' )
-        self.over = true
-        self.respawn = Timer.add(3, function()
-            self.player.character:reset()
-            if self.player.lives <= 0 then
-                Gamestate.switch("gameover")
-            else
-                Gamestate.get('overworld'):reset()
-                Gamestate.switch(Level.new(self.spawn))
-            end
-        end)
-    end
-
-    for i,node in ipairs(self.nodes) do
-        if node.update then node:update(dt, self.player) end
-    end
-
-    self.collider:update(dt)
-
-    self:updatePan(dt)
-
-    local x = self.player.position.x + self.player.width / 2
-    local y = self.player.position.y - self.map.tilewidth * 4.5
+    --assert(self.client.level == "town","town expected. found:"..self.client.level)
+    --self:updatePan(dt)
+    self.client:update(dt)
+    local player = self.client.players[self.client.entity]
+    if not player then return end
+    local playerWidth = 48
+    local x = player.x + playerWidth / 2
+    local y = player.y - self.map.tilewidth * 4.5
     camera:setPosition( math.max(x - window.width / 2, 0),
                         limit( limit(y, 0, self.offset) + self.pan, 0, self.offset ) )
 
-    Timer.update(dt)
 end
 
 function Level:quit()
@@ -343,24 +315,12 @@ end
 
 function Level:draw()
     self.background:draw(0, 0)
+    self.client:draw()
 
-    if self.player.footprint then
-        self:floorspaceNodeDraw()
-    else
-        for i,node in ipairs(self.nodes) do
-            if node.draw and not node.foreground then node:draw() end
-        end
-
-        self.player:draw()
-
-        for i,node in ipairs(self.nodes) do
-            if node.draw and node.foreground then node:draw() end
-        end
-    end
-    
-    self.player.inventory:draw(self.player.position)
-    self.hud:draw( self.player )
-    ach:draw()
+    --TODO:draw inventory, hud and achievements
+    --self.player.inventory:draw(self.player.position)
+    --self.hud:draw( self.player )
+    --ach:draw()
 end
 
 -- draws the nodes based on their location in the y axis
@@ -431,26 +391,13 @@ function Level:leave()
 end
 
 function Level:keyreleased( button )
-    self.player:keyreleased( button, self )
+    local dg = string.format("%s %s %s", self.client.entity, 'keyreleased', button)
+    self.client.udp:send(dg)
 end
 
-function Level:keypressed( button )
-    for i,node in ipairs(self.nodes) do
-        if node.player_touched and node.keypressed then
-            if node:keypressed( button, self.player) then
-              return true
-            end
-        end
-    end
-   
-    if self.player:keypressed( button, self ) then
-      return true
-    end
-
-    if button == 'START' and not self.player.dead and not self.player.controlState:is('ignorePause') then
-        Gamestate.switch('pause')
-        return true
-    end
+function Level:keypressed( button , player)
+    local dg = string.format("%s %s %s", self.client.entity, 'keypressed', button)
+    self.client.udp:send(dg)
 end
 
 function Level:panInit()
