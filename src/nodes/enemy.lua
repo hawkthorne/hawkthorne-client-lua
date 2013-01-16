@@ -29,8 +29,8 @@ function Enemy.new(node, collider, enemytype)
     enemy.maximum_x = math.huge -- 30000
     enemy.maximum_y = math.huge -- 3000
     
-    local type = node.properties.enemytype or enemytype
-    
+    --yikes I'm sorry I had to do this
+    local type = node.name
     enemy.type = type
     
     enemy.props = require( 'nodes/enemies/' .. type )
@@ -42,7 +42,7 @@ function Enemy.new(node, collider, enemytype)
     
     enemy.node_properties = node.properties
     enemy.node = node
-    enemy.collider = collider
+    --enemy.collider = collider
     
     enemy.dead = false
     enemy.idletime = 0
@@ -84,10 +84,10 @@ function Enemy.new(node, collider, enemytype)
         end
     end
     
-    enemy.bb = collider:addRectangle( node.x, node.y, enemy.props.bb_width or enemy.props.width, enemy.props.bb_height or enemy.props.height )
-    enemy.bb.node = enemy
+    --enemy.bb = collider:addRectangle( node.x, node.y, enemy.props.bb_width or enemy.props.width, enemy.props.bb_height or enemy.props.height )
+    --enemy.bb.node = enemy
 
-    enemy.bb_offset = enemy.props.bb_offset or {x=0,y=0}
+    --enemy.bb_offset = enemy.props.bb_offset or {x=0,y=0}
     
     enemy.tokens = {} --the tokens the enemy drops when killed
     

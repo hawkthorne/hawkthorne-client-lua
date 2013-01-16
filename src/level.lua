@@ -40,7 +40,7 @@ local function load_tileset(name)
     return tileset
 end
 
-local function load_node(name)
+function load_node(name)
     if node_cache[name] then
         return node_cache[name]
     end
@@ -246,6 +246,10 @@ end
 function Level:enter( previous, door )
 
     ach:achieve('enter ' .. self.name)
+    self.client.level = self.name
+
+    local dg = string.format("%s %s %s", self.client.entity, 'enter', self.name)
+    self.client.udp:send(dg)
 
     --only restart if it's an ordinary level
     if previous.level or previous==Gamestate.get('overworld') then

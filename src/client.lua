@@ -3,6 +3,11 @@ local Character = require 'character'
 local controls = require 'controls'
 local sound = require 'vendor/TEsound'
 local Gamestate = require 'vendor/Gamestate'
+local HC = require 'vendor/hardoncollider'
+
+local function blank()
+end
+local dummyCollider = HC(100, blank, blank)
 
 --draw data
 
@@ -34,6 +39,7 @@ end
 function Client.new()
     local client = {}
     setmetatable(client, Client)
+    --require ("mobdebug").start()
     local address, port = "localhost", 12345
     client.udp = socket.udp()
     client.udp:settimeout(0)
@@ -122,12 +128,19 @@ function Client:update(deltatime)
             elseif cmd == 'stateSwitch' then
                 print(data)
                 local fromLevel,toLevel = parms:match("^([%a%d]*) (.*)")
-                if toLevel == "overworld" then
-                    Gamestate.switch("overworld", nil, ent)
-                else
-                    --will fail if not in level.lua
+                if(ent==self.entity) then
                     Gamestate.switch(toLevel,nil,ent)
                 end
+                assert(fromLevel,"stateSwitch must come from a level")
+                assert(toLevel,"stateSwitch must go to a level")
+                self.world[fromLevel] = self.world[fromLevel] or {}
+                self.world[toLevel] = self.world[toLevel] or {}
+                --removes the player visually
+                self.world[fromLevel][ent] = nil
+                self.level = toLevel
+                --adding a player to the next level is maintained by updates
+
+                
             elseif cmd == 'sound' then
                 print(data)
                 local name = parms:match("^([%a%d_]*)")
@@ -152,14 +165,25 @@ function Client:draw()
     -- pretty simple, we just loop over the world table, and print the
     -- name (key) of everything in there, at its own stored co-ords.
 
+    --TODO:remove town dependence
+    self.world[self.level] = self.world[self.level] or {}
     if self.player and self.player.footprint then
         self:floorspaceNodeDraw()
     else
         require 'level' --houses load_node code
-        for i,node in pairs(self.world[self.level]) do
-            node = load_node(node.type)
-            if not node.foreground then
-                node:draw()
+        for _,obj in pairs(self.world[self.level]) do
+            if obj.type then
+                if not obj.foreground then
+                    local NodeClass = load_node(obj.type,dummyCollider)
+                    obj.properties = {}
+                    obj.properties.person = obj.person
+                    local node = NodeClass.new(obj)
+                    node.type = obj.type
+                    node.name = obj.name
+                    node:animation().position = obj.position
+                    node.direction = obj.direction
+                    node:draw()
+                end
             end
         end
 
@@ -169,10 +193,17 @@ function Client:draw()
             end
         end
 
-        for i,node in pairs(self.world[self.level]) do
-           node = load_node(node.type)
-           if node.foreground then
-                node:draw()
+        for _,obj in pairs(self.world[self.level]) do
+            if obj.type then
+                if obj.foreground then
+                    local NodeClass = load_node(obj.type,dummyCollider)
+                    obj.properties = {}
+                    obj.properties.person = obj.person
+                    local node = NodeClass.new(obj)
+                    node.type = obj.type
+                    node.name = obj.name
+                    node:draw()
+                end
             end
         end
     end
