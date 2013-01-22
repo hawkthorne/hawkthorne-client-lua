@@ -179,6 +179,7 @@ function Level.new(name)
 
     level.nodes = {}
     level.doors = {}
+    level.action_queue = Queue.new()
 
     level.default_position = {x=0, y=0}
     for k,v in pairs(level.map.objectgroups.nodes.objects) do
@@ -241,6 +242,38 @@ function Level:restartLevel()
     self.player.position = {x = self.default_position.x,
                             y = self.default_position.y}
     Floorspaces:init()
+end
+
+---
+-- add a function to the Action Queue
+-- @param func the function to be added to the queue
+-- @param params the parameters that should be passed to the function func
+-- @return nil
+function Level:queueAction(func, params)
+    table.insert(self.action_queue,{[func]=params})
+end
+---
+-- Executes all functions in the action_queue and clears it afterwards
+-- @return nil
+function Level:processActionQueue()
+    for _,action in ipairs(self.action_queue.items) do
+        for func,params in pairs(action) do
+            if type(func) == 'function' then
+                --for function without parameters
+                if params == nil then
+                    func()
+                --for function with multiple parameters
+                --may clash with functions that only take one table parameter
+                elseif type(params) == 'table' then
+                    func(unpack(params))
+                --for functions with only one parameter that isnt a table
+                else
+                    func(params)
+                end
+            end
+        end
+    end
+    self.action_queue = Queue.new()
 end
 
 function Level:enter( previous, door )
@@ -308,7 +341,6 @@ function Level:update(dt)
     local y = player.y - self.map.tilewidth * 4.5
     camera:setPosition( math.max(x - window.width / 2, 0),
                         limit( limit(y, 0, self.offset) + self.pan, 0, self.offset ) )
-
 end
 
 function Level:quit()
