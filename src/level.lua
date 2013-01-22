@@ -1,5 +1,5 @@
 local Gamestate = require 'vendor/gamestate'
-local Queue = require 'queue'
+local queue = require 'queue'
 local anim8 = require 'vendor/anim8'
 local tmx = require 'vendor/tmx'
 local HC = require 'vendor/hardoncollider'
@@ -9,6 +9,7 @@ local camera = require 'camera'
 local window = require 'window'
 local sound = require 'vendor/TEsound'
 local controls = require 'controls'
+local transition = require 'transition'
 local HUD = require 'hud'
 local music = {}
 require 'vendor/lube'
@@ -150,6 +151,7 @@ function Level.new(name)
     setmetatable(level, Level)
 
     level.over = false
+    level.state = 'idle'  -- TODO: Use state machine
     level.name = name
     level.client = Client.getSingleton()
 
@@ -168,7 +170,7 @@ function Level.new(name)
     level.music = getSoundtrack(level.map)
     level.spawn = 'studyroom'
     level.title = getTitle(level.map)
-
+ 
     level:panInit()
 
     level.players = {}
@@ -177,9 +179,10 @@ function Level.new(name)
         height=level.map.height * level.map.tileheight
     }
 
+    level.transition = transition.new('fade', 0.5)
+    level.events = queue.new()
     level.nodes = {}
     level.doors = {}
-    level.action_queue = Queue.new()
 
     level.default_position = {x=0, y=0}
     for k,v in pairs(level.map.objectgroups.nodes.objects) do
@@ -206,6 +209,7 @@ function Level.new(name)
     end
 
     if level.map.objectgroups.floorspace then
+        level.floorspace = true
         for k,v in pairs(level.map.objectgroups.floorspace.objects) do
             v.objectlayer = 'floorspace'
             table.insert(level.nodes, Floorspace.new(v, level))
@@ -244,39 +248,14 @@ function Level:restartLevel()
     Floorspaces:init()
 end
 
----
--- add a function to the Action Queue
--- @param func the function to be added to the queue
--- @param params the parameters that should be passed to the function func
--- @return nil
-function Level:queueAction(func, params)
-    table.insert(self.action_queue,{[func]=params})
-end
----
--- Executes all functions in the action_queue and clears it afterwards
--- @return nil
-function Level:processActionQueue()
-    for _,action in ipairs(self.action_queue.items) do
-        for func,params in pairs(action) do
-            if type(func) == 'function' then
-                --for function without parameters
-                if params == nil then
-                    func()
-                --for function with multiple parameters
-                --may clash with functions that only take one table parameter
-                elseif type(params) == 'table' then
-                    func(unpack(params))
-                --for functions with only one parameter that isnt a table
-                else
-                    func(params)
-                end
-            end
-        end
-    end
-    self.action_queue = Queue.new()
-end
 
 function Level:enter( previous, door )
+    self.respawn = false
+    self.state = 'idle'
+
+    self.transition:forward(function()
+        self.state = 'active'
+    end)
 
     ach:achieve('enter ' .. self.name)
     self.client.level = self.name
@@ -290,6 +269,7 @@ function Level:enter( previous, door )
         self:restartLevel()
     end
     if previous == Gamestate.get('overworld') then
+        self.respawn = true
         self.player.character:respawn()
     end
     if not self.player then
@@ -301,7 +281,7 @@ function Level:enter( previous, door )
     camera.max.x = self.map.width * self.map.tilewidth - window.width
 
     setBackgroundColor(self.map)
-
+ 
     sound.playMusic( self.music )
 
     self.hud = HUD.new(self)
@@ -320,14 +300,28 @@ function Level:enter( previous, door )
         end
     end
 
+    self:moveCamera()
+
     for i,node in ipairs(self.nodes) do
         if node.enter then node:enter(previous) end
     end
 end
 
-
-
 function Level:init()
+end
+
+local function leaveLevel(level, levelName, doorName)
+  local destination = Gamestate.get(levelName)
+            
+  if level == destination then
+    level.player.position = { -- Copy, or player position corrupts entrance data
+      x = level.doors[doorName].x + level.doors[doorName].node.width / 2 - level.player.width / 2,
+      y = level.doors[doorName].y + level.doors[doorName].node.height - level.player.height
+    }
+    return
+  end
+
+  Gamestate.switch(levelName, doorName)
 end
 
 function Level:update(dt)
@@ -339,6 +333,17 @@ function Level:update(dt)
     local playerWidth = 48
     local x = player.x + playerWidth / 2
     local y = player.y - self.map.tilewidth * 4.5
+
+    self:updatePan(dt)
+    self:moveCamera()
+
+    Timer.update(dt)
+
+end
+
+function Level:moveCamera()
+    local x = self.player.position.x + self.player.width / 2
+    local y = self.player.position.y - self.map.tilewidth * 4.5
     camera:setPosition( math.max(x - window.width / 2, 0),
                         limit( limit(y, 0, self.offset) + self.pan, 0, self.offset ) )
 end
@@ -349,13 +354,53 @@ function Level:quit()
     end
 end
 
+function Level:leave()
+  self.state = 'idle'
+end
+
+function Level:exit(levelName, doorName)
+  self.respawn = false
+  if self.state ~= 'idle' then
+    self.state = 'idle'
+    self.transition:backward(function()
+      self.events:push('exit', levelName, doorName)
+    end)
+  end
+end
+
+
 function Level:draw()
     self.background:draw(0, 0)
+<<<<<<< HEAD
     self.client:draw()
     --TODO:draw inventory, hud and achievements
     --self.player.inventory:draw(self.player.position)
     --self.hud:draw( self.player )
     --ach:draw()
+=======
+
+    if self.player.footprint then
+        self:floorspaceNodeDraw()
+    else
+        for i,node in ipairs(self.nodes) do
+            if node.draw and not node.foreground then node:draw() end
+        end
+
+        self.player:draw()
+
+        for i,node in ipairs(self.nodes) do
+            if node.draw and node.foreground then node:draw() end
+        end
+    end
+    
+    self.player.inventory:draw(self.player.position)
+    self.hud:draw( self.player )
+    ach:draw()
+
+    if self.state == 'idle' then
+      self.transition:draw(camera.x, camera.y, camera:getWidth(), camera:getHeight())
+    end
+>>>>>>> master
 end
 
 -- draws the nodes based on their location in the y axis
@@ -430,9 +475,37 @@ function Level:keyreleased( button )
     self.client.udp:send(dg)
 end
 
+<<<<<<< HEAD
 function Level:keypressed( button , player)
     local dg = string.format("%s %s %s", self.client.entity, 'keypressed', button)
     self.client.udp:send(dg)
+=======
+function Level:keypressed( button )
+    if self.state ~= 'active' then
+        return
+    end
+
+    if button == 'INTERACT' and self.player.character.state ~= 'idle' then
+        return
+    end
+
+    for i,node in ipairs(self.nodes) do
+        if node.player_touched and node.keypressed then
+            if node:keypressed( button, self.player) then
+              return true
+            end
+        end
+    end
+   
+    if self.player:keypressed( button, self ) then
+      return true
+    end
+
+    if button == 'START' and not self.player.dead and not self.player.controlState:is('ignorePause') then
+        Gamestate.switch('pause')
+        return true
+    end
+>>>>>>> master
 end
 
 function Level:panInit()
