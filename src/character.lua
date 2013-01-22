@@ -142,6 +142,7 @@ end
 
 Character:reset()
 
+<<<<<<< HEAD
 function Character.new()
     local character = {}
     setmetatable(character, Character)
@@ -149,3 +150,6 @@ function Character.new()
 end
 
 return Character
+=======
+return Character
+>>>>>>> master
