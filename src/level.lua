@@ -320,7 +320,6 @@ end
 function Level:draw()
     self.background:draw(0, 0)
     self.client:draw()
-
     --TODO:draw inventory, hud and achievements
     --self.player.inventory:draw(self.player.position)
     --self.hud:draw( self.player )

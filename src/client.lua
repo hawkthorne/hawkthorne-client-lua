@@ -33,19 +33,17 @@ local function load_image(name)
     return image_cache[name]
 end
 
--- love.load, hopefully you are familiar with it from the callbacks tutorial
---this function should only be called by Client.getSingleton() until I support multiple 
--- players on a single IP
+--this function should only be called by Client.getSingleton() 
+-- until I support multiple players on a single client application
 function Client.new()
     local client = {}
     setmetatable(client, Client)
-    --require ("mobdebug").start()
     local address, port = "localhost", 12345
     client.udp = socket.udp()
     client.udp:settimeout(0)
     client.udp:setpeername(address, port)
 
-    client.updaterate = 0.01 -- how long to wait, in seconds, before requesting an update
+    client.updaterate = 0.017 -- how long to wait, in seconds, before requesting an update
     
     client.level = 'overworld'
     --client.button_pressed_map = {}
@@ -56,14 +54,20 @@ function Client.new()
     math.randomseed(os.time())
     --later I should make sure these are assigned by the server instead
     client.entity = "player"..tostring(math.random(99999)) --the ent_id of the player I'll be attached to
+    --TODO:change this once i implement a lobby server
     local dg = string.format("%s %s %s %s", client.entity, 'register', Character.name, Character.costume)
     client.udp:send(dg)
 
+    --define my character
     client.player_characters = client.player_characters or {}
     client.player_characters[client.entity] = Character.new()
     client.player_characters[client.entity]:reset()
     client.player_characters[client.entity].name = Character.name
     client.player_characters[client.entity].costume = Character.costume
+
+    --define my player
+    client.players[client.entity] = client.players[client.entity] or {}
+    --the actual player will be populated by updates from the server
     client.players[client.entity] = nil
 
     return client
@@ -98,6 +102,9 @@ function Client:update(deltatime)
     repeat
         data, msg = udp:receive()
         if data then -- you remember, right? that all values in lua evaluate as true, save nil and false?
+            --print("FROM SERVER: "..data)
+            --print("           : "..(msg or "<nil>"))
+
             ent, cmd, parms = data:match("^([%a%d]*) ([%a%d]*) (.*)")
             if cmd == 'updatePlayer' then
                 if not self.hasUpdatedPlayer then print("First player update") 
@@ -112,8 +119,8 @@ function Client:update(deltatime)
                 --playerBundle.id = ent
                 self.players[playerBundle.id] = playerBundle
                 self.player_characters[playerBundle.id] = self.player_characters[playerBundle.id] or Character.new()
-                self.player_characters[playerBundle.id].state = playerBundle.state
-                self.player_characters[playerBundle.id].direction = playerBundle.direction
+                self.player_characters[playerBundle.id].state = string.lower(playerBundle.state)
+                self.player_characters[playerBundle.id].direction = string.lower(playerBundle.direction)
                 self.player_characters[playerBundle.id].name = playerBundle.name
                 self.player_characters[playerBundle.id].costume = playerBundle.costume
                 self.player_characters[playerBundle.id]:animation().position = playerBundle.position
@@ -124,15 +131,17 @@ function Client:update(deltatime)
                     self.hasUpdatedObject = true
                 end
                 local node = lube.bin:unpack_node(obj)
-                self.world[node.level][node.id] = node
+                self:updateObject(node)
+                if(node.type=="enemy" and node.direction=="right" and node.name=="manicorn") then
+                    print(node.position)
+                end
             elseif cmd == 'stateSwitch' then
-                print(data)
                 local fromLevel,toLevel = parms:match("^([%a%d]*) (.*)")
+                assert(toLevel,"stateSwitch must go to a level")
                 if(ent==self.entity) then
                     Gamestate.switch(toLevel,nil,ent)
                 end
                 assert(fromLevel,"stateSwitch must come from a level")
-                assert(toLevel,"stateSwitch must go to a level")
                 self.world[fromLevel] = self.world[fromLevel] or {}
                 self.world[toLevel] = self.world[toLevel] or {}
                 --removes the player visually
@@ -142,7 +151,6 @@ function Client:update(deltatime)
 
                 
             elseif cmd == 'sound' then
-                print(data)
                 local name = parms:match("^([%a%d_]*)")
                 sound.playSfx( name )
             else
@@ -156,7 +164,39 @@ function Client:update(deltatime)
 end
 
 function Client:sendToServer(message)
+    --print("TO SERVER: "..message)
+    --print("         : "..self.address..","..self.port)
     self.udp:send(message)
+end
+
+
+--updates a node represented by a bundle
+function Client:updateObject(nodeBun)
+    self.world[nodeBun.level] = self.world[nodeBun.level] or {}
+    assert(self.world[nodeBun.level],"level '"..nodeBun.level.."' has not been generated yet ")
+    
+    local node
+    if self.world[nodeBun.level][nodeBun.id] then
+        node = self.world[nodeBun.level][nodeBun.id]
+    else
+        local NodeClass = load_node(nodeBun.type)
+        node = NodeClass.new(nodeBun)
+        self.world[nodeBun.level][nodeBun.id] = node
+    end
+    
+    node.type = nodeBun.type
+    node.name = nodeBun.name
+    node.level = nodeBun.level
+    node.state = nodeBun.state or "default"
+    node.position = {x = nodeBun.x, y = nodeBun.y}
+    node.direction = nodeBun.direction
+    --TODO: handle nodes without animation
+    if node.animation and node:animation().position then
+        node:animation().position = nodeBun.position
+    else
+        print("node has no animation")
+    end
+    node.id = nodeBun.id
 end
 
 -- love.draw, hopefully you are familiar with it from the callbacks tutorial
@@ -171,17 +211,9 @@ function Client:draw()
         self:floorspaceNodeDraw()
     else
         require 'level' --houses load_node code
-        for _,obj in pairs(self.world[self.level]) do
-            if obj.type then
-                if not obj.foreground then
-                    local NodeClass = load_node(obj.type,dummyCollider)
-                    obj.properties = {}
-                    obj.properties.person = obj.person
-                    local node = NodeClass.new(obj)
-                    node.type = obj.type
-                    node.name = obj.name
-                    node:animation().position = obj.position
-                    node.direction = obj.direction
+        for _,node in pairs(self.world[self.level]) do
+            if node.type then
+                if not node.foreground then
                     node:draw()
                 end
             end
@@ -193,15 +225,9 @@ function Client:draw()
             end
         end
 
-        for _,obj in pairs(self.world[self.level]) do
-            if obj.type then
-                if obj.foreground then
-                    local NodeClass = load_node(obj.type,dummyCollider)
-                    obj.properties = {}
-                    obj.properties.person = obj.person
-                    local node = NodeClass.new(obj)
-                    node.type = obj.type
-                    node.name = obj.name
+        for _,node in pairs(self.world[self.level]) do
+            if node.type then
+                if node.foreground then
                     node:draw()
                 end
             end
@@ -239,9 +265,9 @@ function Client:drawObject(node)
     --love.graphics.drawq(nodeImage, frame?, node.x, node.y, r, sx, sy, ox, oy)
 end
 function Client:drawPlayer(plyr)
+    
     --i really don't like how character was called
     -- in the old non-multiplayer code
-    
     assert(plyr,"Player must not be nil")
     assert(plyr.id,"Player needs to have an id")
     assert(self.player_characters,"Player("..plyr.id..")must be associated with a character")
@@ -249,6 +275,7 @@ function Client:drawPlayer(plyr)
     assert(self.player_characters[plyr.id].animation,"Character("..plyr.id..") must have a current animation")
     local character = self.player_characters[plyr.id]
     local animation = self.player_characters[plyr.id]:animation()
+    
     animation:draw(character:sheet(), plyr.x, plyr.y)
 end
  

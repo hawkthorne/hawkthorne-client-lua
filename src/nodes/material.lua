@@ -20,11 +20,9 @@ function Material.new(node, collider)
     material.name = node.name
     material.image = love.graphics.newImage('images/materials/'..node.name..'.png')
     material.image_q = love.graphics.newQuad( 0, 0, 24, 24, material.image:getWidth(),material.image:getHeight() )
-    material.foreground = node.properties.foreground
-    material.collider = collider
-    material.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
-    material.bb.node = material
-    collider:setPassive(material.bb)
+    
+    --TODO: reimplement use of foreground property
+    --material.foreground = node.properties.foreground
 
     material.position = {x = node.x, y = node.y}
     material.width = node.width
@@ -50,35 +48,17 @@ end
 -- Called when the material begins colliding with another node
 -- @return nil
 function Material:collide(node, dt, mtv_x, mtv_y)
-    if node and node.character then
-        self.touchedPlayer = node
-    end
 end
 
 ---
 -- Called when the material finishes colliding with another node
 -- @return nil
 function Material:collide_end(node, dt)
-    if node and node.character then
-        self.touchedPlayer = nil
-    end
-end
+end 
 
 ---
 -- Updates the material and allows the player to pick it up.
 function Material:update()
-    if not self.exists then
-        return
-    end
-    if controls.isDown( 'UP' ) and self.touchedPlayer and not self.touchedPlayer.controlState:is('ignoreMovement') then
-        local itemNode = require( 'items/materials/' .. self.name )
-        itemNode.type = 'material'
-        local item = Item.new(itemNode)
-        if self.touchedPlayer.inventory:addItem(item) then
-            self.exists = false
-            self.collider:remove(self.bb)
-        end
-    end
 end
 
 return Material

@@ -35,17 +35,18 @@ function Liquid.new(node, collider)
     setmetatable(liquid, Liquid)
 
     liquid.collider = collider
-    liquid.width = node.width
-    liquid.height = node.height
+    liquid.width = node.width or 30
+    liquid.height = node.height or 30
 
-    assert(np.sprite, 'Liquid Object (' .. node.name .. ') must specify "sprite" property ( path )' )
-    liquid.image = love.graphics.newImage( np.sprite )
-    liquid.tile_height = np.tile_height and tonumber(np.tile_height) or 24
-    liquid.tile_width = np.tile_width and tonumber(np.tile_width) or 24
+    --assert(np.sprite, 'Liquid Object (' .. node.name .. ') must specify "sprite" property ( path )' )
+    local node_name = (node.name == "" and "water") or node.name
+    liquid.image = love.graphics.newImage( 'images/'..(node_name or 'water')..'.png')
+    liquid.tile_height = 24 --np.tile_height and tonumber(np.tile_height) or 24
+    liquid.tile_width = 24 --np.tile_width and tonumber(np.tile_width) or 24
 
     liquid.g = anim8.newGrid( liquid.tile_height, liquid.tile_width, liquid.image:getWidth(), liquid.image:getHeight())
-    liquid.animation_mode = np.mode and np.mode or 'loop'
-    liquid.animation_speed = np.speed and tonumber(np.speed) or .2
+    liquid.animation_mode = 'loop' --np.mode and np.mode or 'loop'
+    liquid.animation_speed = .2 --np.speed and tonumber(np.speed) or .2
     liquid.animation_top_frames = '1-' .. math.floor( liquid.image:getWidth() / liquid.tile_width ) .. ',1'
     liquid.animation_bottom_frames = '1-' .. math.floor( liquid.image:getWidth() / liquid.tile_width ) .. ',2'
     liquid.animation_top = anim8.newAnimation( liquid.animation_mode, liquid.g( liquid.animation_top_frames ), liquid.animation_speed )
@@ -53,24 +54,24 @@ function Liquid.new(node, collider)
 
     liquid.position = {x=node.x, y=node.y}
 
-    liquid.death = np.death == 'true'
-    liquid.injure = np.injure == 'true'
-    liquid.drown = np.drown == 'true'
-    liquid.drag = np.drag == 'true'
-    liquid.foreground = np.foreground ~= 'false'
-    liquid.mask = np.mask == 'true'
-    liquid.uniform = np.uniform == 'true'
-    liquid.opacity = np.opacity and np.opacity or 1
-    liquid.fade = np.fade == 'true'
+    --liquid.death = np.death == 'true'
+    --liquid.injure = np.injure == 'true'
+    --liquid.drown = np.drown == 'true'
+    --liquid.drag = np.drag == 'true'
+    --liquid.foreground = np.foreground ~= 'false'
+    --liquid.mask = np.mask == 'true'
+    --liquid.uniform = np.uniform == 'true'
+    liquid.opacity = 1 --np.opacity and np.opacity or 1
+    liquid.fade = 'true' -- np.fade == 'true'
     
     liquid.stencil = function()
        love.graphics.rectangle( 'fill', node.x - 100, node.y - 100, node.width + 200, 100)
        love.graphics.rectangle( 'fill', node.x, node.y, node.width, node.height )
     end
 
-    liquid.bb = collider:addRectangle(node.x, node.y + 3, node.width, node.height - 3)
-    liquid.bb.node = liquid
-    collider:setPassive(liquid.bb)
+    --liquid.bb = collider:addRectangle(node.x, node.y + 3, node.width, node.height - 3)
+    --liquid.bb.node = liquid
+    --collider:setPassive(liquid.bb)
 
     return liquid
 end

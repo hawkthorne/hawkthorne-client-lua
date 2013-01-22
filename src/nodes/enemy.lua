@@ -30,7 +30,8 @@ function Enemy.new(node, collider, enemytype)
     enemy.maximum_y = math.huge -- 3000
     
     --yikes I'm sorry I had to do this
-    local type = node.name
+    if node.name=="" then node.name = nil end
+    local type = node.name or (node.properties and node.properties.enemytype)
     enemy.type = type
     
     enemy.props = require( 'nodes/enemies/' .. type )
@@ -101,6 +102,13 @@ function Enemy:enter()
 end
 
 function Enemy:animation()
+    print(self.state)
+    print(self.direction)
+    print(self.animations)
+    print(self.animations[self.state])
+    print(self.animations[self.state][self.direction])
+    print()
+    
     return self.animations[self.state][self.direction]
 end
 

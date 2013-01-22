@@ -9,6 +9,9 @@ local state = Gamestate.new()
 local Character = require 'character'
 local Client = require 'client'
 
+
+local client = Client.getSingleton()
+
 local map = {}
 map.tileWidth = 12
 map.tileHeight = 12
@@ -286,6 +289,8 @@ function state:keypressed( button )
         --level.player.position = {x=coordinates.x, y=coordinates.y} -- Copy, or player position corrupts entrance data
 
         Gamestate.switch(self.zone.level)
+        local msg = string.format("%s %s %s",client.entity,"enterLevel",self.zone.level)
+        client.udp:send(msg)
     end
 
     self:move( button )
