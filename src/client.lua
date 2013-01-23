@@ -136,9 +136,13 @@ function Client:update(deltatime)
                     print(node.position)
                 end
             elseif cmd == 'stateSwitch' then
-                local fromLevel,toLevel = parms:match("^([%a%d]*) (.*)")
+                local fromLevel,toLevel = parms:match("^([%a%d-]*) (.*)")
                 assert(toLevel,"stateSwitch must go to a level")
                 if(ent==self.entity) then
+                    if not self.HAS_INITIALIZED then
+                        require("mobdebug").start()
+                        self.HAS_INITIALIZED = true
+                    end
                     Gamestate.switch(toLevel,nil,ent)
                 end
                 assert(fromLevel,"stateSwitch must come from a level")

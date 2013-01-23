@@ -102,13 +102,6 @@ function Enemy:enter()
 end
 
 function Enemy:animation()
-    print(self.state)
-    print(self.direction)
-    print(self.animations)
-    print(self.animations[self.state])
-    print(self.animations[self.state][self.direction])
-    print()
-    
     return self.animations[self.state][self.direction]
 end
 

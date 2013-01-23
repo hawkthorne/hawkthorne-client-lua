@@ -342,10 +342,14 @@ function Level:update(dt)
 end
 
 function Level:moveCamera()
-    local x = self.player.position.x + self.player.width / 2
-    local y = self.player.position.y - self.map.tilewidth * 4.5
+    local player = self.client.players[self.client.entity]
+    if not player then return end
+    local playerWidth = 48
+    local x = player.x + playerWidth / 2
+    local y = player.y - self.map.tilewidth * 4.5
     camera:setPosition( math.max(x - window.width / 2, 0),
                         limit( limit(y, 0, self.offset) + self.pan, 0, self.offset ) )
+
 end
 
 function Level:quit()
@@ -370,37 +374,20 @@ end
 
 
 function Level:draw()
+
+    print(self.client.level)
+    
     self.background:draw(0, 0)
-<<<<<<< HEAD
     self.client:draw()
     --TODO:draw inventory, hud and achievements
     --self.player.inventory:draw(self.player.position)
     --self.hud:draw( self.player )
     --ach:draw()
-=======
 
-    if self.player.footprint then
-        self:floorspaceNodeDraw()
-    else
-        for i,node in ipairs(self.nodes) do
-            if node.draw and not node.foreground then node:draw() end
-        end
-
-        self.player:draw()
-
-        for i,node in ipairs(self.nodes) do
-            if node.draw and node.foreground then node:draw() end
-        end
-    end
-    
-    self.player.inventory:draw(self.player.position)
-    self.hud:draw( self.player )
-    ach:draw()
-
-    if self.state == 'idle' then
-      self.transition:draw(camera.x, camera.y, camera:getWidth(), camera:getHeight())
-    end
->>>>>>> master
+--    if self.state == 'idle' then
+--      self.transition:draw(camera.x, camera.y, camera:getWidth(), camera:getHeight())
+--    end
+--
 end
 
 -- draws the nodes based on their location in the y axis
@@ -475,37 +462,9 @@ function Level:keyreleased( button )
     self.client.udp:send(dg)
 end
 
-<<<<<<< HEAD
 function Level:keypressed( button , player)
     local dg = string.format("%s %s %s", self.client.entity, 'keypressed', button)
     self.client.udp:send(dg)
-=======
-function Level:keypressed( button )
-    if self.state ~= 'active' then
-        return
-    end
-
-    if button == 'INTERACT' and self.player.character.state ~= 'idle' then
-        return
-    end
-
-    for i,node in ipairs(self.nodes) do
-        if node.player_touched and node.keypressed then
-            if node:keypressed( button, self.player) then
-              return true
-            end
-        end
-    end
-   
-    if self.player:keypressed( button, self ) then
-      return true
-    end
-
-    if button == 'START' and not self.player.dead and not self.player.controlState:is('ignorePause') then
-        Gamestate.switch('pause')
-        return true
-    end
->>>>>>> master
 end
 
 function Level:panInit()
