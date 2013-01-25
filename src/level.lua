@@ -375,8 +375,6 @@ end
 
 function Level:draw()
 
-    print(self.client.level)
-    
     self.background:draw(0, 0)
     self.client:draw()
     --TODO:draw inventory, hud and achievements

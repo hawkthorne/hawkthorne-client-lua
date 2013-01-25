@@ -132,17 +132,10 @@ function Client:update(deltatime)
                 end
                 local node = lube.bin:unpack_node(obj)
                 self:updateObject(node)
-                if(node.type=="enemy" and node.direction=="right" and node.name=="manicorn") then
-                    print(node.position)
-                end
             elseif cmd == 'stateSwitch' then
                 local fromLevel,toLevel = parms:match("^([%a%d-]*) (.*)")
                 assert(toLevel,"stateSwitch must go to a level")
                 if(ent==self.entity) then
-                    if not self.HAS_INITIALIZED then
-                        require("mobdebug").start()
-                        self.HAS_INITIALIZED = true
-                    end
                     Gamestate.switch(toLevel,nil,ent)
                 end
                 assert(fromLevel,"stateSwitch must come from a level")
@@ -201,6 +194,7 @@ function Client:updateObject(nodeBun)
         print("node has no animation")
     end
     node.id = nodeBun.id
+    node.lastUpdate = os.time()
 end
 
 -- love.draw, hopefully you are familiar with it from the callbacks tutorial
@@ -208,6 +202,8 @@ function Client:draw()
     -- if not self.level then return end
     -- pretty simple, we just loop over the world table, and print the
     -- name (key) of everything in there, at its own stored co-ords.
+    local curTime = os.time()
+    local updateThreshold = 5
 
     --TODO:remove town dependence
     self.world[self.level] = self.world[self.level] or {}
@@ -216,7 +212,7 @@ function Client:draw()
     else
         require 'level' --houses load_node code
         for _,node in pairs(self.world[self.level]) do
-            if node.type then
+            if node.type and curTime-node.lastUpdate > updateThreshold then
                 if not node.foreground then
                     node:draw()
                 end
@@ -230,7 +226,7 @@ function Client:draw()
         end
 
         for _,node in pairs(self.world[self.level]) do
-            if node.type then
+            if node.type and curTime-node.lastUpdate > updateThreshold then
                 if node.foreground then
                     node:draw()
                 end
