@@ -261,7 +261,7 @@ function Level:enter( previous, door )
     self.client.level = self.name
 
     local dg = string.format("%s %s %s", self.client.entity, 'enter', self.name)
-    self.client.udp:send(dg)
+    self.client:sendToServer(dg)
 
     --only restart if it's an ordinary level
     if previous.level or previous==Gamestate.get('overworld') then
@@ -457,12 +457,12 @@ end
 
 function Level:keyreleased( button )
     local dg = string.format("%s %s %s", self.client.entity, 'keyreleased', button)
-    self.client.udp:send(dg)
+    self.client:sendToServer(dg)
 end
 
 function Level:keypressed( button , player)
     local dg = string.format("%s %s %s", self.client.entity, 'keypressed', button)
-    self.client.udp:send(dg)
+    self.client:sendToServer(dg)
 end
 
 function Level:panInit()

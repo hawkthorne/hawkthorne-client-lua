@@ -5,10 +5,6 @@ local sound = require 'vendor/TEsound'
 local Gamestate = require 'vendor/Gamestate'
 local HC = require 'vendor/hardoncollider'
 
-local function blank()
-end
-local dummyCollider = HC(100, blank, blank)
-
 --draw data
 
 local Client = {}
@@ -35,13 +31,24 @@ end
 
 --this function should only be called by Client.getSingleton() 
 -- until I support multiple players on a single client application
-function Client.new()
+function Client.new(address, port)
+    assert(address,"An IP address is required")
+    assert(port,"A port is required")
     local client = {}
     setmetatable(client, Client)
-    local address, port = "localhost", 12345
     client.udp = socket.udp()
-    client.udp:settimeout(0)
+    client.udp:settimeout(0.017)
     client.udp:setpeername(address, port)
+    
+    local prefix = "client"..os.date("%Y_%m_%d")
+    local suffix = ".log"
+    local file_name = prefix..suffix
+    local i = 1
+    while(file_exists(file_name)) do
+        file_name = prefix.."_"..i..suffix
+        i = i+1
+    end
+    client.log_file = io.open(file_name, "w")
 
     client.updaterate = 0.017 -- how long to wait, in seconds, before requesting an update
     
@@ -56,7 +63,7 @@ function Client.new()
     client.entity = "player"..tostring(math.random(99999)) --the ent_id of the player I'll be attached to
     --TODO:change this once i implement a lobby server
     local dg = string.format("%s %s %s %s", client.entity, 'register', Character.name, Character.costume)
-    client.udp:send(dg)
+    client:sendToServer(dg)
 
     --define my character
     client.player_characters = client.player_characters or {}
@@ -73,17 +80,21 @@ function Client.new()
     return client
 end
 
+function file_exists(name)
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
+
 --returns the same client every time
 function Client.getSingleton()
     lube.bin:setseperators("?","!")
-    Client.singleton = Client.singleton or Client.new()
+    Client.singleton = Client.singleton or Client.new("localhost", 12345)
     return Client.singleton
 end
 
 -- love.update, hopefully you are familiar with it from the callbacks tutorial
 
 function Client:update(deltatime)
-    local udp = self.udp
     local entity = self.entity
     local updaterate = self.updaterate
     
@@ -94,16 +105,17 @@ function Client:update(deltatime)
         local dg
 
         local dg = string.format("%s %s %s", entity, 'update', self.level or '$')
-        udp:send(dg)
+        self:sendToServer(dg)
 
         t=t-updaterate -- set t for the next round
     end
 
     repeat
-        data, msg = udp:receive()
+        data, msg = self.udp:receive()
         if data then -- you remember, right? that all values in lua evaluate as true, save nil and false?
-            --print("FROM SERVER: "..data)
-            --print("           : "..(msg or "<nil>"))
+            self.log_file:write("FROM SERVER: "..data.."\n")
+            self.log_file:write("           : "..(msg or "<nil>").."\n")
+            --self.log_file:flush()
 
             ent, cmd, parms = data:match("^([%a%d]*) ([%a%d]*) (.*)")
             if cmd == 'updatePlayer' then
@@ -160,9 +172,21 @@ function Client:update(deltatime)
 
 end
 
+--should not be called after a user is playing on server
+function Client:serverConnected()
+  local data, msg = self.udp:receive()
+  if not data and msg ~= 'timeout' then
+    return false
+  else 
+    return true
+  end
+end
+
 function Client:sendToServer(message)
-    --print("TO SERVER: "..message)
-    --print("         : "..self.address..","..self.port)
+    self.log_file:write("TO SERVER: "..message.."\n")
+    self.log_file:write("         : "..(self.address or '<nil>')..","..(self.port or '<nil>').."\n")
+    --self.log_file:flush()
+    
     self.udp:send(message)
 end
 
@@ -191,7 +215,7 @@ function Client:updateObject(nodeBun)
     if node.animation and node:animation().position then
         node:animation().position = nodeBun.position
     else
-        print("node has no animation")
+        --print("node has no animation")
     end
     node.id = nodeBun.id
     node.lastUpdate = os.time()
@@ -202,9 +226,7 @@ function Client:draw()
     -- if not self.level then return end
     -- pretty simple, we just loop over the world table, and print the
     -- name (key) of everything in there, at its own stored co-ords.
-    local curTime = os.time()
-    local updateThreshold = 5
-
+    
     --TODO:remove town dependence
     self.world[self.level] = self.world[self.level] or {}
     if self.player and self.player.footprint then
@@ -212,7 +234,7 @@ function Client:draw()
     else
         require 'level' --houses load_node code
         for _,node in pairs(self.world[self.level]) do
-            if node.type and curTime-node.lastUpdate > updateThreshold then
+            if node.type then
                 if not node.foreground then
                     node:draw()
                 end
@@ -226,7 +248,7 @@ function Client:draw()
         end
 
         for _,node in pairs(self.world[self.level]) do
-            if node.type and curTime-node.lastUpdate > updateThreshold then
+            if node.type then
                 if node.foreground then
                     node:draw()
                 end

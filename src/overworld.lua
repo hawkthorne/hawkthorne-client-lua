@@ -290,7 +290,7 @@ function state:keypressed( button )
 
         Gamestate.switch(self.zone.level)
         local msg = string.format("%s %s %s",client.entity,"enterLevel",self.zone.level)
-        client.udp:send(msg)
+        client:sendToServer(msg)
     end
 
     self:move( button )
