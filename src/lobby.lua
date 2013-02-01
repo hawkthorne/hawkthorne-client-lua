@@ -21,7 +21,8 @@ function state:init()
         local address_port = server_list[i]:split(":")
         local address = address_port[1]
         local port = address_port[2]
-        Client.singleton = server_cache[address_port] or Client.new(address, port)
+        server_cache[address_port] = server_cache[address_port] or Client.new(address, port)
+        Client.singleton = server_cache[address_port]
         if not Client.singleton:serverConnected() then
             table.remove(server_list,i)
         end

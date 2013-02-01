@@ -260,13 +260,12 @@ function Level:enter( previous, door )
     ach:achieve('enter ' .. self.name)
     self.client.level = self.name
 
-    local dg = string.format("%s %s %s", self.client.entity, 'enter', self.name)
-    self.client:sendToServer(dg)
-
     --only restart if it's an ordinary level
-    if previous.level or previous==Gamestate.get('overworld') then
+    if previous.level or previous==Gamestate.get('overworld') or not previous.name then
         self.previous = previous
         self:restartLevel()
+        local dg = string.format("%s %s %s", self.client.entity, 'enter', self.name)
+        self.client:sendToServer(dg)
     end
     if previous == Gamestate.get('overworld') then
         self.respawn = true
@@ -461,6 +460,9 @@ function Level:keyreleased( button )
 end
 
 function Level:keypressed( button , player)
+    if button == "START" then
+        Gamestate.switch("pause")
+    end
     local dg = string.format("%s %s %s", self.client.entity, 'keypressed', button)
     self.client:sendToServer(dg)
 end

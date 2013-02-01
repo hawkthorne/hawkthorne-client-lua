@@ -60,6 +60,7 @@ function GS.load(name)
   else
     states[name] = require(name)
   end
+  states[name].name = name
 
   return states[name]
 end
