@@ -289,7 +289,7 @@ function state:keypressed( button )
         --level.player.position = {x=coordinates.x, y=coordinates.y} -- Copy, or player position corrupts entrance data
 
         Gamestate.switch(self.zone.level)
-        local msg = string.format("%s %s %s",client.entity,"enterLevel",self.zone.level)
+        local msg = string.format("%s %s %s",client.entity,"enter",self.zone.level)
         client:sendToServer(msg)
     end
 

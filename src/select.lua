@@ -8,6 +8,7 @@ local sound = require 'vendor/TEsound'
 local Character = require 'character'
 local characters = Character.characters
 local controls = require 'controls'
+local client = require("client").getSingleton()
 
 local character_selections = {}
 character_selections[1] = {} -- main characters
@@ -139,7 +140,8 @@ function state:update(dt)
         Character:setCharacter( self:character().name )
         Character:setCostume( self:character().costumes[self:character().count].sheet )
         Character.changed = true
-        
+        client.player_characters[client.entity].name = Character.name
+        client.player_characters[client.entity].costume = Character.costume
         love.graphics.setColor(255, 255, 255, 255)
         local level = Gamestate.get('overworld')
         level:reset()

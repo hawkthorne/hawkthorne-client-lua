@@ -29,9 +29,9 @@ function Projectile.new(node, collider)
     proj.sheet = love.graphics.newImage('images/'..dir..name..'.png')
     proj.foreground = proj.props.foreground
 
-    proj.collider = collider
-    proj.bb = collider:addRectangle(node.x, node.y, node.width , node.height )
-    proj.bb.node = proj
+    --proj.collider = collider
+    --proj.bb = collider:addRectangle(node.x, node.y, node.width , node.height )
+    --proj.bb.node = proj
     proj.stayOnScreen = proj.props.stayOnScreen
     proj.start_x = node.x
 

@@ -1,7 +1,7 @@
 local Gamestate = require ("vendor/gamestate")
 local Client = require ("client")
 local window = require ("window")
---require("mobdebug").start()
+local sound = require ("vendor/TEsound")
 require("vendor/lube")
 
 local state = Gamestate.new()
@@ -42,8 +42,9 @@ function state:draw()
 
     local row_width = width-x_margin*2
     local row_height = 30
+    local col_width_1 = 100
 
-    love.graphics.print("address"..":".."port", x_margin+x_padding, y_margin+y_padding)
+    love.graphics.print("ADDRESS"..":".."PORT", x_margin+x_padding, y_margin+y_padding)
     love.graphics.rectangle( "line", x_margin, y_padding, row_width, row_height)
     for i=1,(#server_list) do
         local address_port = server_list[i]:split(":")
@@ -52,14 +53,17 @@ function state:draw()
         address = address or "NULL"
         port = port or "NULL"
         if i==selection then
-            love.graphics.setColor( 20,20,20, 255 )
-            love.graphics.rectangle( "fill", x_margin, i*(row_height+y_padding)+y_margin, row_width, row_height)
+            love.graphics.setColor( 0,40,0, 255 )
+            love.graphics.rectangle( "fill", x_margin,     i*(row_height+y_padding)+y_margin, row_width, row_height)
             love.graphics.setColor( 0, 255, 0, 255 )
         end
-        love.graphics.print(address..":"..port, x_margin+x_padding, i*(row_height+y_padding)+y_margin+y_padding)
+        love.graphics.print(address, x_margin+x_padding, i*(row_height+y_padding)+y_margin+y_padding)
+        love.graphics.print(port, x_margin+x_padding+col_width_1+x_padding, i*(row_height+y_padding)+y_margin+y_padding)
+        love.graphics.line( x_margin+x_padding+col_width_1, i*(row_height+y_padding)+y_margin, x_margin+x_padding+col_width_1, i*(row_height+y_padding)+y_margin+row_height)
         love.graphics.rectangle( "line", x_margin, i*(row_height+y_padding)+y_margin, row_width, row_height)
     end
 end
+
 
 --TODO:list broadcasting clients
 function state:update(dt)
@@ -67,7 +71,8 @@ function state:update(dt)
         local address_port = server_list[i]:split(":")
         local address = address_port[1]
         local port = address_port[2]
-        Client.singleton = server_cache[address_port] or Client.new(address, port)
+        server_cache[address_port] = server_cache[address_port] or Client.new(address, port)
+        Client.singleton = server_cache[address_port]
         if not Client.singleton:serverConnected() then
             table.remove(server_list,i)
         end
@@ -84,8 +89,10 @@ function state:keypressed( button )
         local address_port = server_list[selection]:split(":")
         local address = address_port[1]
         local port = address_port[2]
-        Client.singleton = Client.new(address, port)
+        server_cache[address_port] = server_cache[address_port] or Client.new(address, port)
+        Client.singleton = server_cache[address_port]
         Client.singleton:update(0)
+        sound.playSfx( 'confirm' )
         Gamestate.switch('select')
     end
     

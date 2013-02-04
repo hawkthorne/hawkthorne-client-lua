@@ -259,8 +259,11 @@ function Level:enter( previous, door )
 
     ach:achieve('enter ' .. self.name)
     self.client.level = self.name
+    camera:scale(scale, scale)
 
-    --only restart if it's an ordinary level
+
+    --only restart if it's 
+    --from a typical level(e.g. town), or overworld, or commandline
     if previous.level or previous==Gamestate.get('overworld') or not previous.name then
         self.previous = previous
         self:restartLevel()
@@ -327,6 +330,13 @@ function Level:update(dt)
     --assert(self.client.level == "town","town expected. found:"..self.client.level)
     --self:updatePan(dt)
     self.client:update(dt)
+    
+    --lazy short-term solution
+    if love.filesystem.exists("maps/" .. self.client.level .. ".lua") then
+        self.map = require("maps/" .. self.client.level)
+        self.background = load_tileset(self.client.level)
+        self.offset = getCameraOffset(self.map)
+    end
     local player = self.client.players[self.client.entity]
     if not player then return end
     local playerWidth = 48
@@ -374,8 +384,13 @@ end
 
 function Level:draw()
 
-    self.background:draw(0, 0)
-    self.client:draw()
+    if love.filesystem.exists("maps/" .. self.client.level .. ".lua") then
+        self.background:draw(0, 0)
+        self.client:draw()
+    --FIXME: this shouldn't be necessary
+    elseif self.client.level=="overworld" then
+        Gamestate.switch(self.client.level)
+    end
     --TODO:draw inventory, hud and achievements
     --self.player.inventory:draw(self.player.position)
     --self.hud:draw( self.player )

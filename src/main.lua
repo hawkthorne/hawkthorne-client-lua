@@ -17,6 +17,7 @@ if correctVersion then
   local character = require 'character'
   local cheat = require 'cheat'
   local player = require 'player'
+  local Client = require 'client'
 
   -- XXX Hack for level loading
   Gamestate.Level = Level
@@ -48,6 +49,8 @@ if correctVersion then
     cli:add_option("-j, --jump", "Enable High Jump Cheat")
     cli:add_option("-d, --debug", "Enable Memory Debugger")
     cli:add_option("-b, --bbox", "Draw all bounding boxes ( enables memory debugger )")
+    cli:add_option("-p, --port", "Port of the desired server")
+    cli:add_option("-a, --address", "Address of the server")
     cli:add_option("--console", "Displays print info")
 
     local args = cli:parse(arg)
@@ -101,6 +104,18 @@ if correctVersion then
     if args["j"] then
       cheat.jump_high = true
     end
+    
+    local port, address
+    if args["port"] ~= "" then
+      port = args["port"]
+    end
+    if args["address"] ~= "" then
+      address = args["address"]
+    end
+    port = port or 12345
+    address = address or "localhost"
+    Client.singleton = Client.new(address,port)
+    
     
     love.graphics.setDefaultImageFilter('nearest', 'nearest')
     camera:setScale(window.scale, window.scale)

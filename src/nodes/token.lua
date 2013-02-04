@@ -5,9 +5,13 @@ local game = require 'game'
 local Token = {}
 Token.__index = Token
  
-function Token.new( type, x, y, collider, value )
+function Token.new( node, collider, x, y, value )
     local token = {}
     setmetatable(token, Token)
+    local type = node.name
+    x = x or node.x
+    y = y or node.y
+    
 
     token.item = require ( 'tokens/' .. type )
 
@@ -36,8 +40,8 @@ function Token.new( type, x, y, collider, value )
     token.active = true
     token.delay = 0.1
 
-    token.bb = collider:addRectangle( token.position.x, token.position.y, token.width, token.height )
-    token.bb.node = token
+    --token.bb = collider:addRectangle( token.position.x, token.position.y, token.width, token.height )
+    --token.bb.node = token
 
     token.tokenAnimate = anim8.newAnimation( 'loop', token.g( token.item.frames ), token.item.speed )
 

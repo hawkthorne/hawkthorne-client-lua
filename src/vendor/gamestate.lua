@@ -53,7 +53,6 @@ end
 GS.Level = nil
 
 function GS.load(name)
-
   if love.filesystem.exists("maps/" .. name .. ".lua") then
     -- ugly hack to get around circular import
     states[name] = require("level").new(name)
@@ -71,13 +70,8 @@ end
 
 
 function GS.get(name)
-  local state = states[name]
-
-  if state then
-    return state
-  end
-
-  return GS.load(name)
+  states[name] = states[name] or GS.load(name)
+  return states[name]
 end
 
 function GS.switch(to, ...)

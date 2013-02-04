@@ -95,6 +95,7 @@ end
 -- love.update, hopefully you are familiar with it from the callbacks tutorial
 
 function Client:update(deltatime)
+    
     local entity = self.entity
     local updaterate = self.updaterate
     
@@ -119,9 +120,6 @@ function Client:update(deltatime)
 
             ent, cmd, parms = data:match("^([%a%d]*) ([%a%d]*) (.*)")
             if cmd == 'updatePlayer' then
-                if not self.hasUpdatedPlayer then print("First player update") 
-                    self.hasUpdatedPlayer = true
-                end
                 local obj = parms:match("^(.*)")
                 local playerBundle = lube.bin:unpack_node(obj)
                 --should validate characters and costumes to default as abed.base
@@ -139,9 +137,7 @@ function Client:update(deltatime)
 
             elseif cmd == 'updateObject' then
                 local obj = parms:match("^(.*)")
-                if not self.hasUpdatedObject then print("First object update") 
-                    self.hasUpdatedObject = true
-                end
+
                 local node = lube.bin:unpack_node(obj)
                 self:updateObject(node)
             elseif cmd == 'stateSwitch' then
@@ -149,13 +145,13 @@ function Client:update(deltatime)
                 assert(toLevel,"stateSwitch must go to a level")
                 if(ent==self.entity) then
                     Gamestate.switch(toLevel,nil,ent)
+                    self.level = toLevel
                 end
                 assert(fromLevel,"stateSwitch must come from a level")
                 self.world[fromLevel] = self.world[fromLevel] or {}
                 self.world[toLevel] = self.world[toLevel] or {}
                 --removes the player visually
                 self.world[fromLevel][ent] = nil
-                self.level = toLevel
                 --adding a player to the next level is maintained by updates
 
                 
@@ -201,6 +197,9 @@ function Client:updateObject(nodeBun)
         node = self.world[nodeBun.level][nodeBun.id]
     else
         local NodeClass = load_node(nodeBun.type)
+        nodeBun.properties = {sprite = nodeBun.spritePath,
+                                sheet = nodeBun.sheetPath}
+
         node = NodeClass.new(nodeBun)
         self.world[nodeBun.level][nodeBun.id] = node
     end
@@ -211,9 +210,13 @@ function Client:updateObject(nodeBun)
     node.state = nodeBun.state or "default"
     node.position = {x = nodeBun.x, y = nodeBun.y}
     node.direction = nodeBun.direction
+    node.width = nodeBun.width
+    node.height = nodeBun.height
     --TODO: handle nodes without animation
-    if node.animation and node:animation().position then
+    if node.animation and type(node.animation)=="function" and node:animation().position then
         node:animation().position = nodeBun.position
+    elseif node.animation and node.animation.position then
+        node.animation.position = nodeBun.position
     else
         --print("node has no animation")
     end
@@ -228,15 +231,19 @@ function Client:draw()
     -- name (key) of everything in there, at its own stored co-ords.
     
     --TODO:remove town dependence
+    
+    local currentTime = os.time()
+    local disappearThreshold = 0.5
     self.world[self.level] = self.world[self.level] or {}
     if self.player and self.player.footprint then
         self:floorspaceNodeDraw()
     else
         require 'level' --houses load_node code
         for _,node in pairs(self.world[self.level]) do
-            if node.type then
-                if not node.foreground then
-                    node:draw()
+            if node.type and not node.foreground then
+                node:draw()
+                if currentTime-node.lastUpdate > disappearThreshold then
+                    self.world[self.level][node.id] = nil
                 end
             end
         end
@@ -248,9 +255,10 @@ function Client:draw()
         end
 
         for _,node in pairs(self.world[self.level]) do
-            if node.type then
-                if node.foreground then
-                    node:draw()
+            if node.type and (node.foreground or node.type=="liquid") then
+                node:draw()
+                if currentTime-node.lastUpdate > disappearThreshold  then
+                    self.world[self.level][node.id] = nil
                 end
             end
         end

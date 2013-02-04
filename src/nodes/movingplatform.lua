@@ -53,7 +53,7 @@ function MovingPlatform.new(node, collider)
     mp.height = node.height
 
     mp.line = node.properties.line
-    assert(mp.line, 'Moving platforms must include a \'line\' property')
+    --assert(mp.line, 'Moving platforms must include a \'line\' property')
 
     mp.direction = node.properties.direction == '-1' and -1 or 1
 
@@ -71,128 +71,34 @@ function MovingPlatform.new(node, collider)
 
     mp.velocity = {x=0, y=0}
 
-    mp.platform = Platform.new( node, collider )
+    --mp.platform = Platform.new( node, collider )
 
-    mp.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
-    mp.bb.node = mp
-    collider:setPassive(mp.bb)
+    --mp.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
+    --mp.bb.node = mp
+    --collider:setPassive(mp.bb)
 
     return mp
 end
 
 function MovingPlatform:enter()
-    self.map = gs.currentState().map
-    for _,x in pairs( self.map.objectgroups.movement.objects ) do
-        if x.name == self.line then self.line = x end
-    end
-    if type(self.line) == 'string' then error( 'Moving platform could not find \'' .. self.line .. '\' movement line' ) end
-
-    assert( self.line.polyline, 'Moving platform only knows how to follow polylines currently, sorry' )
-
-    self.bspline = Bspline.new( getPolylinePoints( self.line ) )
 end
 
 function MovingPlatform:collide(node, dt, mtv_x, mtv_y)
-    if not node.isPlayer then return end
-    local player = node
-
-    if not player.currentplatform and mtv_x == 0 and mtv_y <= 0 then
-        player.currentplatform = self
-    end
-    if not self.moving and self.pos <= 1 then
-        self.moving = true
-    end
 end
 
 function MovingPlatform:collide_end(node, dt)
-    if node.isPlayer and node.currentplatform == self then
-        node.currentplatform = nil
-    end
 end
 
 function MovingPlatform:update(dt,player)
-    local pre = { x = self.x, y = self.y }
-    
-    if self.moving then
-        self.pos = self.pos + ( dt * ( .25 * self.speed ) * self.direction )
-    end
-
-    if self.chain > 1 and self.x - self.node.x > self.width and not self.next then
-        self.next = MovingPlatform.new(self.node, self.collider )
-        self.next:enter()
-        self.next.chain = self.chain - 1
-        self.next.moving = true
-    end
-
-    if self.moving and self.pos > 1 then
-        if self.singleuse then
-            self.moving = false
-            self.velocity.x = 300
-            self.velocity.y = -100
-        else
-            self.pos = 1
-        end
-    end
-
-    if self.pos < 0 then self.pos = 0 end
-    if self.moving and ( self.pos == 1 or self.pos == 0 ) then
-        self.direction = -self.direction
-    end
-    
-    if self.singleuse and self.pos >= 1 then
-        --throw it
-        if self.velocity.x < 0 then
-            self.velocity.x = math.min(self.velocity.x + game.friction * dt, 0)
-        else
-            self.velocity.x = math.max(self.velocity.x - game.friction * dt, 0)
-        end
-        
-        self.velocity.y = self.velocity.y + ( game.gravity / 2 ) * dt
-
-        if self.velocity.y > game.max_y then
-            self.velocity.y = game.max_y
-        end
-
-        self.x = self.x + self.velocity.x * dt
-        self.y = self.y + self.velocity.y * dt
-    else
-        local p = self.bspline:eval( self.pos )
-        self.x, self.y = p.x - (self.width / 2), p.y - (self.height / 2)
-    end
-    
-    -- move the player along with the bounding box
-    if player.currentplatform == self then
-        player.position.x = player.position.x + ( self.x - pre.x )
-        player.position.y = player.position.y + ( self.y - pre.y )
-        player:moveBoundingBox()
-    end
-
-    -- update the bounding boxes
-    self.platform.bb:moveTo( self.x + self.width / 2,
-                             self.y + (self.height / 2) + 1 )
-    self.bb:moveTo( self.x + self.width / 2,
-                    self.y + (self.height / 2) + 1 )
-                    
-    if self.next then self.next:update(dt,player) end
 end
 
 function MovingPlatform:draw()
     if self.showline then love.graphics.line( unpack( self.bspline:polygon(4) ) ) end
     
-    love.graphics.draw( self.sprite, self.x + self.offset_x, self.y + self.offset_y )
-    
-    if self.next then self.next:draw() end
+    love.graphics.draw( self.sprite, self.x, self.y)    
 end
 
 function getPolylinePoints( poly )
-    -- returns sets of coordinates that make up each line
-    local x,y = poly.x, poly.y
-    local coords = {}
-    for _, point in ipairs(poly.polyline) do
-        table.insert( coords, x + point.x )
-        table.insert( coords, y + point.y )
-    end
-    return coords
 end
 
 return MovingPlatform
