@@ -74,7 +74,7 @@ function GS.get(name)
   return states[name]
 end
 
-function GS.switch(to, ...)
+function GS.switch(to, door, entity)
   assert(to, "Missing argument: Gamestate to switch to")
 
   if type(to) == "string" then
@@ -82,13 +82,17 @@ function GS.switch(to, ...)
     to = GS.get(to)
     assert(to, "Failed loading gamestate " .. name)
   end
+  assert(door==nil or to.doors[door], "no door of name '"..(door or '<nil>').."' found")
+  local entity2 = require("client").getSingleton().entity
+  assert(entity2, "entity must not be nil")
+  assert(entity==nil or entity==entity2,"entity("..(entity or '<nil>')..") does not equal entity("..(entity2 or '<nil>')..")")
 
   current:leave()
   local pre = current
   to:init()
   to.init = __NULL__
   current = to
-  return current:enter(pre, ...)
+  return current:enter(pre, door, entity)
 end
 
 -- holds all defined love callbacks after GS.registerEvents is called

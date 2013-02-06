@@ -2,7 +2,7 @@ local socket = require "socket"
 local Character = require 'character'
 local controls = require 'controls'
 local sound = require 'vendor/TEsound'
-local Gamestate = require 'vendor/Gamestate'
+local Gamestate = require 'vendor/gamestate'
 local HC = require 'vendor/hardoncollider'
 
 --draw data
@@ -139,6 +139,7 @@ function Client:update(deltatime)
                 local obj = parms:match("^(.*)")
 
                 local node = lube.bin:unpack_node(obj)
+                --TODO: ensure nodes have a name
                 self:updateObject(node)
             elseif cmd == 'stateSwitch' then
                 local fromLevel,toLevel = parms:match("^([%a%d-]*) (.*)")

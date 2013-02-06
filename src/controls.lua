@@ -84,8 +84,8 @@ function controls.newButton(key, button)
     end
 end
 
-assert(controls.newButton('z', 'ACTION'))
-assert(controls.newButton('lshift', 'ACTION'))
+--assert(controls.newButton('z', 'ACTION'))
+--assert(controls.newButton('lshift', 'ACTION'))
 --temporarily commented out for multiplayer compliance testing
 --assert(controls.newButton('v', 'ACTION') == false)
 

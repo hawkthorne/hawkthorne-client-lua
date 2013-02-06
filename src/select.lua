@@ -142,6 +142,8 @@ function state:update(dt)
         Character.changed = true
         client.player_characters[client.entity].name = Character.name
         client.player_characters[client.entity].costume = Character.costume
+        local msg = string.format("%s %s %s %s", client.entity, 'changeCostume', Character.name, Character.costume)
+        client:sendToServer(msg)
         love.graphics.setColor(255, 255, 255, 255)
         local level = Gamestate.get('overworld')
         level:reset()

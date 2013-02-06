@@ -94,7 +94,7 @@ for i=0,15 do insertrandomcloud(true) end
 
 -- overworld state machine
 state.zones = {
-    forest_1 = { x=66,  y=100, UP=nil,        DOWN=nil,        RIGHT='forest_2', LEFT=nil,        name='Greendale',          level='studyroom'                                          },
+    forest_1 = { x=66,  y=100, UP=nil,        DOWN=nil,        RIGHT='forest_2', LEFT=nil,        name='Greendale',          level='hallway'                                          },
     forest_2 = { x=91,  y=100, UP='forest_3', DOWN=nil,        RIGHT=nil,        LEFT='forest_1', name='Forest',             level='forest'                                             },
     forest_3 = { x=91,  y=89,  UP='town_1',   DOWN='forest_2', RIGHT=nil,        LEFT=nil,        name='Forest 2',           level='forest-2'                                           },
     forest_4 = { x=122, y=36,  UP='forest_5', DOWN=nil,        RIGHT=nil,        LEFT='island_4', name=nil,                  level=nil                                                  },
@@ -121,6 +121,7 @@ function state:init()
 end
 
 function state:enter(previous)
+    client.level = "overworld"
     camera:scale(scale, scale)
     camera.max.x = map.width * map.tileWidth - (window.width * 2)
 
