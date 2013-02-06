@@ -10,12 +10,15 @@ local HC = require 'vendor/hardoncollider'
 local Client = {}
 Client.__index = Client
 Client.singleton = nil
+Client.DEBUG = false
 
 local t = 0
 local button_pressed_map = {}
 
 local image_cache = {}
 local quad_cache = {}
+
+local function __NULL__() end
 
 local function load_image(name)
     if image_cache[name] then
@@ -48,7 +51,11 @@ function Client.new(address, port)
         file_name = prefix.."_"..i..suffix
         i = i+1
     end
-    client.log_file = io.open(file_name, "w")
+    if Client.DEBUG then
+        client.log_file = io.open(file_name, "w")
+    else
+        client.log_file = {write=__NULL__}
+    end
 
     client.updaterate = 0.017 -- how long to wait, in seconds, before requesting an update
     

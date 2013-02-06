@@ -63,7 +63,9 @@ if correctVersion then
     if args["level"] ~= "" then
       state = args["level"]
     end
-
+    --temporary so we can only acces this level
+    state = "multiplayer"
+    
     if args["door"] ~= "" then
       door = args["door"]
     end

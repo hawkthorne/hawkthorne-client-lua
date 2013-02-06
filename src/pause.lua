@@ -78,10 +78,10 @@ function state:keypressed( button )
         elseif self.option == 1 then
             Gamestate.switch('options')
         elseif self.option == 2 then
-            Gamestate.switch('overworld')
+            --Gamestate.switch('overworld')
         elseif self.option == 3 then
-            self.previous:quit()
-            Gamestate.switch(Gamestate.home)
+            --self.previous:quit()
+            --Gamestate.switch(Gamestate.home)
         elseif self.option == 4 then
             love.event.push("quit")
         end
@@ -98,8 +98,10 @@ function state:draw()
     love.graphics.setColor( 0, 0, 0, 255 )
     love.graphics.print('Controls', 198, 101)
     love.graphics.print('Options', 198, 131)
+    love.graphics.setColor( 70, 70, 70, 255 )
     love.graphics.print('Quit to Map', 198, 161)
     love.graphics.print('Quit to Menu', 198, 191)
+    love.graphics.setColor( 0, 0, 0, 255 )
     love.graphics.print('Quit to Desktop', 198, 221)
     love.graphics.setColor( 255, 255, 255, 255 )
     love.graphics.draw(self.arrow, 156, 96 + 30 * self.option)
