@@ -6,9 +6,10 @@ Info.__index = Info
 function Info.new(node, collider)
     local info = {}
     setmetatable(info, Info)
-    info.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
-    info.bb.node = info
-    info.info = split( node.properties.info, '|' )
+    --info.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
+    --info.bb.node = info
+    --TODO: include info message
+    --info.info = split( node.properties.info, '|' )
 
     info.x = node.x
     info.y = node.y
@@ -16,7 +17,7 @@ function Info.new(node, collider)
     info.width = node.width
     info.foreground = 'true'
 
-    collider:setPassive(info.bb)
+    --collider:setPassive(info.bb)
     
     info.dialog = nil
     info.current = nil

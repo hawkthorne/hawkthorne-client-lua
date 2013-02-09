@@ -20,10 +20,10 @@ function Cornelius.new(node, collider)
     cornelius.width = node.width
     cornelius.height = node.height
 
-    cornelius.collider = collider
-    cornelius.collider:setActive()
-    cornelius.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
-    cornelius.bb.node = cornelius
+    --cornelius.collider = collider
+    --cornelius.collider:setActive()
+    --cornelius.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
+    --cornelius.bb.node = cornelius
     cornelius.hittable = true
 
     cornelius.animations = {

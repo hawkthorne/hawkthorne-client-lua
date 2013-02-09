@@ -166,6 +166,10 @@ function Client:update(deltatime)
             elseif cmd == 'sound' then
                 local name = parms:match("^([%a%d_]*)")
                 sound.playSfx( name )
+            elseif cmd == 'unregister' then
+                local name = parms:match("^([%a%d_]*)")
+                self.players[name] = nil
+                self.player_characters[name] = nil
             else
                 print("unrecognised command:", cmd)
             end
@@ -315,6 +319,7 @@ function Client:drawPlayer(plyr)
     local animation = self.player_characters[plyr.id]:animation()
     
     animation:draw(character:sheet(), plyr.x, plyr.y)
+    love.graphics.print(plyr.id,plyr.x,plyr.y)
 end
  
 return Client
