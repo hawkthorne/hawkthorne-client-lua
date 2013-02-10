@@ -14,3 +14,4 @@ release.md
 src/conf.lua.bak
 *.log
 *.lua.bak
+*.zip

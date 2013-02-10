@@ -114,7 +114,7 @@ if correctVersion then
     if args["address"] ~= "" then
       address = args["address"]
     end
-    port = port or 12345
+    port = port or 12346
     address = address or "localhost"
     Client.singleton = Client.new(address,port)
     

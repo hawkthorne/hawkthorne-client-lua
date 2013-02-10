@@ -95,7 +95,7 @@ end
 --returns the same client every time
 function Client.getSingleton()
     lube.bin:setseperators("?","!")
-    Client.singleton = Client.singleton or Client.new("localhost", 12345)
+    Client.singleton = Client.singleton or Client.new("localhost", 12346)
     return Client.singleton
 end
 
@@ -174,7 +174,7 @@ function Client:update(deltatime)
                 print("unrecognised command:", cmd)
             end
         elseif msg ~= 'timeout' then 
-            error("Network error: "..tostring(msg))
+            error("Network error: "..tostring(msg).."\n"..self.udp:getpeername())
         end
     until not data 
 
