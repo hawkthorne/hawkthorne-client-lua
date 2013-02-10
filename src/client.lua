@@ -245,7 +245,10 @@ function Client:draw()
     --TODO:remove town dependence
     
     local currentTime = os.time()
-    local disappearThreshold = 0.5
+    --indicates how quickly an object will disappear
+    --i.e. if you haven't heard about an object in the past 5 secomds it
+    --gets removed from the array
+    local disappearThreshold = 5
     self.world[self.level] = self.world[self.level] or {}
     if self.player and self.player.footprint then
         self:floorspaceNodeDraw()
