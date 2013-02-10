@@ -221,6 +221,8 @@ function Client:updateObject(nodeBun)
     node.level = nodeBun.level
     node.state = nodeBun.state or "default"
     node.position = {x = nodeBun.x, y = nodeBun.y}
+    node.x = nodeBun.x
+    node.y = nodeBun.y
     node.direction = nodeBun.direction
     node.width = nodeBun.width
     node.height = nodeBun.height

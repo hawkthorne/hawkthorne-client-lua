@@ -59,7 +59,7 @@ function Liquid.new(node, collider)
     --liquid.drown = np.drown == 'true'
     --liquid.drag = np.drag == 'true'
     --liquid.foreground = np.foreground ~= 'false'
-    --liquid.mask = np.mask == 'true'
+    liquid.mask = 'true' --np.mask == 'true'
     --liquid.uniform = np.uniform == 'true'
     liquid.opacity = 0.7 --np.opacity and np.opacity or 1
     liquid.fade = 'true' -- np.fade == 'true'

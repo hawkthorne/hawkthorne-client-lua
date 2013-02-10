@@ -45,37 +45,15 @@ function MovingPlatform.new(node, collider)
     local mp = {}
     setmetatable(mp, MovingPlatform)
     mp.node = node
-    mp.collider = collider
-    
     mp.x = node.x
     mp.y = node.y
     mp.width = node.width
     mp.height = node.height
 
-    mp.line = node.properties.line
-    --assert(mp.line, 'Moving platforms must include a \'line\' property')
-
     mp.direction = node.properties.direction == '-1' and -1 or 1
 
     mp.sprite = love.graphics.newImage( node.properties.sprite )
     assert( mp.sprite, 'Moving platforms must specify a \'sprite\' property' )
-
-    mp.offset_x = node.properties.offset_x and node.properties.offset_x or 0
-    mp.offset_y = node.properties.offset_y and node.properties.offset_y or 0
-    mp.speed = node.properties.speed and node.properties.speed or 1
-    mp.pos = node.properties.start and tonumber(node.properties.start) or 0.5 -- middle
-    mp.showline = node.properties.showline == 'true'
-    mp.moving = node.properties.touchstart ~= 'true'
-    mp.singleuse = node.properties.singleuse == 'true'
-    mp.chain = tonumber(node.properties.chain) or 1
-
-    mp.velocity = {x=0, y=0}
-
-    --mp.platform = Platform.new( node, collider )
-
-    --mp.bb = collider:addRectangle(node.x, node.y, node.width, node.height)
-    --mp.bb.node = mp
-    --collider:setPassive(mp.bb)
 
     return mp
 end
@@ -93,9 +71,7 @@ function MovingPlatform:update(dt,player)
 end
 
 function MovingPlatform:draw()
-    if self.showline then love.graphics.line( unpack( self.bspline:polygon(4) ) ) end
-    
-    love.graphics.draw( self.sprite, self.x, self.y)    
+    love.graphics.draw( self.sprite, self.x, self.y)
 end
 
 function getPolylinePoints( poly )
