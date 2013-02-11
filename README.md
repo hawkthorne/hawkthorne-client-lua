@@ -252,17 +252,17 @@ alternate version [here](https://dl.dropbox.com/u/40773/love-0.8.0-openalsoft.zi
 		$ make maps
 		
 
-8. Run the server
+8. Run the client
 
 		$ love src
 		
-	A blue error message screen indicates the address was found, but we failed to establish a connection.
+	A blue error message screen indicates the address was found, but we failed to establish a connection with the port.
 	Seeing the top of a map currently isn't an indication of the ability to connect.
 	
 	
-	If you are testing a specific port, you can optionally pass that port using the --port option
+	If you are testing a specific address,port, you can optionally pass them through the commandline
 
-		$ love src --port=12345
+		$ love src --address="localhost" --port=12345
 
 
 Notes: 
