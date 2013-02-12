@@ -26,6 +26,7 @@ function Sprite.new(node, collider)
 
     assert(p.sheet, "'sheet' required for sprite node")
 
+    sprite.type = "sprite"
     sprite.sheet = load_sprite(p.sheet)
     
     sprite.animation = p.animation or false

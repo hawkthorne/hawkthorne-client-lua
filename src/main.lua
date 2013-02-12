@@ -64,7 +64,7 @@ if correctVersion then
       state = args["level"]
     end
     --temporary so we can only acces this level
-    --state = "multiplayer"
+    state = "multiplayer"
     
     if args["door"] ~= "" then
       door = args["door"]

@@ -19,6 +19,8 @@ local image_cache = {}
 local quad_cache = {}
 
 local function __NULL__() end
+local unpackedNode = {}
+local unpackedPlayer = {}
 
 local function load_image(name)
     if image_cache[name] then
@@ -128,26 +130,34 @@ function Client:update(deltatime)
             ent, cmd, parms = data:match("^([%a%d]*) ([%a%d]*) (.*)")
             if cmd == 'updatePlayer' then
                 local obj = parms:match("^(.*)")
-                local playerBundle = lube.bin:unpack_node(obj)
+                lube.bin:unpack_node(obj,unpackedPlayer)
                 --should validate characters and costumes to default as abed.base
                 -- if ent == self.entity then
-                    -- self.level = playerBundle.level
+                    -- self.level = unpackedPlayer.level
                 -- end
-                --playerBundle.id = ent
-                self.players[playerBundle.id] = playerBundle
-                self.player_characters[playerBundle.id] = self.player_characters[playerBundle.id] or Character.new()
-                self.player_characters[playerBundle.id].state = string.lower(playerBundle.state)
-                self.player_characters[playerBundle.id].direction = string.lower(playerBundle.direction)
-                self.player_characters[playerBundle.id].name = playerBundle.name
-                self.player_characters[playerBundle.id].costume = playerBundle.costume
-                self.player_characters[playerBundle.id]:animation().position = playerBundle.position
+                --unpackedPlayer.id = ent
+                self.players[unpackedPlayer.id] = self.players[unpackedPlayer.id] or {}
+                for k,v in pairs(unpackedPlayer) do
+                  self.players[unpackedPlayer.id][k] = v
+                end
+                self.player_characters[unpackedPlayer.id] = self.player_characters[unpackedPlayer.id] or Character.new()
+                self.player_characters[unpackedPlayer.id].state = string.lower(unpackedPlayer.state)
+                self.player_characters[unpackedPlayer.id].direction = string.lower(unpackedPlayer.direction)
+                self.player_characters[unpackedPlayer.id].name = unpackedPlayer.name
+                self.player_characters[unpackedPlayer.id].costume = unpackedPlayer.costume
+                self.player_characters[unpackedPlayer.id]:animation().position = unpackedPlayer.position
 
             elseif cmd == 'updateObject' then
                 local obj = parms:match("^(.*)")
-
-                local node = lube.bin:unpack_node(obj)
+                unpackedNode.name = nil
+                unpackedNode.type = nil
+                lube.bin:unpack_node(obj,unpackedNode)
                 --TODO: ensure nodes have a name
-                self:updateObject(node)
+                if unpackedNode and unpackedNode.type then
+                  self:updateObject(unpackedNode)
+                else
+                  print("ERROR: invalid node: "..tostring(unpackedNode and unpackedNode.type)..","..tostring(unpackedNode and unpackedNode.name))
+                end
             elseif cmd == 'stateSwitch' then
                 local fromLevel,toLevel = parms:match("^([%a%d-]*) (.*)")
                 assert(toLevel,"stateSwitch must go to a level")

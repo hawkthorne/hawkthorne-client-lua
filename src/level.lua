@@ -42,6 +42,8 @@ local function load_tileset(name)
 end
 
 function load_node(name)
+    --reinsert when you want to support attack sprites
+    if not name then return end
     if node_cache[name] then
         return node_cache[name]
     end
