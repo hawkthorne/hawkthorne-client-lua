@@ -71,7 +71,7 @@ function Client.new(address, port)
     --later I should make sure these are assigned by the server instead
     client.entity = "player"..tostring(math.random(99999)) --the ent_id of the player I'll be attached to
     --TODO:change this once i implement a lobby server
-    local dg = string.format("%s %s %s %s", client.entity, 'register', Character.name, Character.costume)
+    local dg = string.format("%s %s %s %s %s", client.entity, 'register', Character.name, Character.costume, (client.username or client.entity))
     client:sendToServer(dg)
 
     --define my character
@@ -130,6 +130,7 @@ function Client:update(deltatime)
             ent, cmd, parms = data:match("^([%a%d]*) ([%a%d]*) (.*)")
             if cmd == 'updatePlayer' then
                 local obj = parms:match("^(.*)")
+                unpackedPlayer.username = nil
                 lube.bin:unpack_node(obj,unpackedPlayer)
                 --should validate characters and costumes to default as abed.base
                 -- if ent == self.entity then
@@ -146,6 +147,7 @@ function Client:update(deltatime)
                 self.player_characters[unpackedPlayer.id].name = unpackedPlayer.name
                 self.player_characters[unpackedPlayer.id].costume = unpackedPlayer.costume
                 self.player_characters[unpackedPlayer.id]:animation().position = unpackedPlayer.position
+                self.player_characters[unpackedPlayer.id].username = self.player_characters[unpackedPlayer.id].username or unpackedPlayer.id
 
             elseif cmd == 'updateObject' then
                 local obj = parms:match("^(.*)")
@@ -334,7 +336,7 @@ function Client:drawPlayer(plyr)
     local animation = self.player_characters[plyr.id]:animation()
     
     animation:draw(character:sheet(), plyr.x, plyr.y)
-    love.graphics.print(plyr.id,plyr.x,plyr.y)
+    love.graphics.print(plyr.username or plyr.id,plyr.x,plyr.y)
 end
  
 return Client

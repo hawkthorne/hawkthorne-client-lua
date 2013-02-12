@@ -51,6 +51,7 @@ if correctVersion then
     cli:add_option("-b, --bbox", "Draw all bounding boxes ( enables memory debugger )")
     cli:add_option("-p, --port", "Port of the desired server")
     cli:add_option("-a, --address", "Address of the server")
+    cli:add_option("-u, --username", "The client's desired username")
     cli:add_option("--console", "Displays print info")
 
     local args = cli:parse(arg)
@@ -113,6 +114,10 @@ if correctVersion then
     end
     if args["address"] ~= "" then
       address = args["address"]
+    end
+
+    if args["username"] ~= "" then
+      Client.username = args["username"]
     end
     port = port or 12346
     address = address or "localhost"
