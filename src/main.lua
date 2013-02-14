@@ -120,7 +120,9 @@ if correctVersion then
       Client.username = args["username"]
     end
     port = port or 12346
-    address = address or "localhost"
+    -- AWS server
+    address = address or "54.235.153.195"
+    --connect to AWS server if a command-line arg wasn't used
     Client.singleton = Client.new(address,port)
     
     

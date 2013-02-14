@@ -97,6 +97,7 @@ end
 --returns the same client every time
 function Client.getSingleton()
     lube.bin:setseperators("?","!")
+    --use localhost if we haven't already manually set the server
     Client.singleton = Client.singleton or Client.new("localhost", 12346)
     return Client.singleton
 end
