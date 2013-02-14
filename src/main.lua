@@ -94,6 +94,7 @@ if correctVersion then
     
     if args["d"] then
       debugger.set( true, false )
+      Client.DEBUG = true
     end
 
     if args["b"] then
