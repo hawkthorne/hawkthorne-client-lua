@@ -110,7 +110,9 @@ function Client:update(deltatime)
     local updaterate = self.updaterate
     
     t = t + deltatime -- increase t by the deltatime
-    if t > updaterate then
+    --try to send send a message every 'updateRate' seconds if the server has sent a response.
+    -- in the uneventful case that 6 seconds have passed, we close the client
+    if (t > updaterate)  then
         local x, y = 0, 0
         
         local dg
@@ -119,11 +121,14 @@ function Client:update(deltatime)
         self:sendToServer(dg)
 
         t=t-updaterate -- set t for the next round
+    elseif t > 6 then
+        error("Updates have been too slow. The server may be down.")
     end
 
     repeat
         data, msg = self.udp:receive()
         if data then -- you remember, right? that all values in lua evaluate as true, save nil and false?
+
             self.log_file:write("FROM SERVER: "..data.."\n")
             self.log_file:write("           : "..(msg or "<nil>").."\n")
             --self.log_file:flush()
