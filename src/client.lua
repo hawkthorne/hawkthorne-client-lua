@@ -21,6 +21,7 @@ local quad_cache = {}
 local function __NULL__() end
 local unpackedNode = {}
 local unpackedPlayer = {}
+local serverResponseCount = 0
 
 local function load_image(name)
     if image_cache[name] then
@@ -112,22 +113,24 @@ function Client:update(deltatime)
     t = t + deltatime -- increase t by the deltatime
     --try to send send a message every 'updateRate' seconds if the server has sent a response.
     -- in the uneventful case that 6 seconds have passed, we close the client
-    if (t > updaterate)  then
+    if (t > updaterate) and  serverResponseCount > 1 then
         local x, y = 0, 0
         
         local dg
 
         local dg = string.format("%s %s %s", entity, 'update', self.level or '$')
         self:sendToServer(dg)
+        serverRespondeCount = 0
 
         t=t-updaterate -- set t for the next round
-    elseif t > 6 then
+    elseif t > 6 and serverResponseCount <= 0  then
         error("Updates have been too slow. The server may be down.")
     end
 
     repeat
         data, msg = self.udp:receive()
         if data then -- you remember, right? that all values in lua evaluate as true, save nil and false?
+            serverResponseCount = serverResponseCount + 1
 
             self.log_file:write("FROM SERVER: "..data.."\n")
             self.log_file:write("           : "..(msg or "<nil>").."\n")
@@ -268,7 +271,7 @@ function Client:draw()
     --indicates how quickly an object will disappear
     --i.e. if you haven't heard about an object in the past 5 secomds it
     --gets removed from the array
-    local disappearThreshold = 5
+    local disappearThreshold = math.huge
     self.world[self.level] = self.world[self.level] or {}
     if self.player and self.player.footprint then
         self:floorspaceNodeDraw()
