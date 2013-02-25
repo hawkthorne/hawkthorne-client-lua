@@ -86,7 +86,7 @@ function Client.new(address, port)
     client.players[client.entity] = client.players[client.entity] or {}
     --the actual player will be populated by updates from the server
     client.players[client.entity] = nil
-
+		print("Connected to " .. address .. " on port " .. port)
     return client
 end
 
