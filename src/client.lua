@@ -62,7 +62,7 @@ function Client.new(address, port)
 
     client.updaterate = 0.017 -- how long to wait, in seconds, before requesting an update
     
-    client.level = 'overworld'
+    client.level = 'multiplayer'
     --client.button_pressed_map = {}
 
     client.world = {} -- world[level][ent_id] = objectBundle
@@ -73,6 +73,12 @@ function Client.new(address, port)
     client.entity = "player"..tostring(math.random(99999)) --the ent_id of the player I'll be attached to
     --TODO:change this once i implement a lobby server
     local dg = string.format("%s %s %s %s %s", client.entity, 'register', Character.name, Character.costume, (client.username or client.entity))
+    client:sendToServer(dg)
+
+    dg = string.format("%s %s %s", client.entity, 'enter', client.level)
+    client:sendToServer(dg)
+
+    dg = string.format("%s %s %s", client.entity, 'update', client.level)
     client:sendToServer(dg)
 
     --define my character
@@ -155,9 +161,8 @@ function Client:update(deltatime)
                 self.player_characters[unpackedPlayer.id].direction = string.lower(unpackedPlayer.direction)
                 self.player_characters[unpackedPlayer.id].name = unpackedPlayer.name
                 self.player_characters[unpackedPlayer.id].costume = unpackedPlayer.costume
-                self.player_characters[unpackedPlayer.id]:animation().position = unpackedPlayer.position
                 self.player_characters[unpackedPlayer.id].username = self.player_characters[unpackedPlayer.id].username or unpackedPlayer.id
-
+                self.player_characters[unpackedPlayer.id]:animation():update(deltatime)
             elseif cmd == 'updateObject' then
                 local obj = parms:match("^(.*)")
                 unpackedNode.name = nil
@@ -182,8 +187,6 @@ function Client:update(deltatime)
                 --removes the player visually
                 self.world[fromLevel][ent] = nil
                 --adding a player to the next level is maintained by updates
-
-                
             elseif cmd == 'sound' then
                 local name = parms:match("^([%a%d_]*)")
                 sound.playSfx( name )
