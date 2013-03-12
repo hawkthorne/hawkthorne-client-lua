@@ -165,12 +165,10 @@ function Client:update(deltatime)
                 self.player_characters[unpackedPlayer.id]:animation():update(deltatime)
             elseif cmd == 'updateObject' then
                 local obj = parms:match("^(.*)")
-                unpackedNode.name = nil
-                unpackedNode.type = nil
                 lube.bin:unpack_node(obj,unpackedNode)
                 --TODO: ensure nodes have a name
-                if unpackedNode and unpackedNode.type then
-                  self:updateObject(unpackedNode)
+                if unpackedNode and unpackedNode.id then
+                  self:updateObject(unpackedNode,t)
                 else
                   print("ERROR: invalid node: "..tostring(unpackedNode and unpackedNode.type)..","..tostring(unpackedNode and unpackedNode.name))
                 end
@@ -224,7 +222,7 @@ end
 
 
 --updates a node represented by a bundle
-function Client:updateObject(nodeBun)
+function Client:updateObject(nodeBun, dt)
     self.world[nodeBun.level] = self.world[nodeBun.level] or {}
     assert(self.world[nodeBun.level],"level '"..nodeBun.level.."' has not been generated yet ")
     
@@ -240,24 +238,27 @@ function Client:updateObject(nodeBun)
         self.world[nodeBun.level][nodeBun.id] = node
     end
     
-    node.type = nodeBun.type
-    node.name = nodeBun.name
-    node.level = nodeBun.level
-    node.state = nodeBun.state or "default"
-    node.position = {x = nodeBun.x, y = nodeBun.y}
-    node.x = nodeBun.x
-    node.y = nodeBun.y
-    node.direction = nodeBun.direction
-    node.width = nodeBun.width
-    node.height = nodeBun.height
+    node.type = nodeBun.type or node.type
+    node.name = nodeBun.name or node.name
+    node.level = nodeBun.level or node.level
+    node.state = nodeBun.state or node.state or "default"
+    node.position = {x = nodeBun.x or node.position.x, y = nodeBun.y or node.position.y}    
+    node.x = nodeBun.x or node.x
+    node.y = nodeBun.y or node.y
+    node.direction = nodeBun.direction or node.direction
+    node.width = nodeBun.width or node.width
+    node.height = nodeBun.height or node.height
     --TODO: handle nodes without animation
     if node.animation and type(node.animation)=="function" and node:animation().position then
-        node:animation().position = nodeBun.position
+        node:animation().position = nodeBun.position or node:animation().position
+        node:animation():update(dt)
     elseif node.animation and node.animation.position then
-        node.animation.position = nodeBun.position
+        node.animation.position = nodeBun.position or node.animation.position
+        node.animation:update(dt)
     else
         --print("node has no animation")
     end
+    assert(node.id==nil or node.id==nodeBun.id,"node is being spontaneously reset to a new id")
     node.id = nodeBun.id
     node.lastUpdate = os.time()
 end

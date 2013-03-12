@@ -147,11 +147,25 @@ if correctVersion then
     if button then Gamestate.keyreleased(button) end
   end
 
+  local typing = false
+  local message = nil
+
   function love.keypressed(key)
     if controls.enableRemap then Gamestate.keypressed(key) return end
     if key == 'f5' then debugger:toggle() end
-    local button = controls.getButton(key)
-    if button then Gamestate.keypressed(button) end
+    if key == 'f7' then typing = not typing end
+    
+    if typing and key~="return" and key~="f7" then
+      message = (message or "")..key
+    elseif message and typing and key=="return" then
+      local client = Client.getSingleton()
+      local dg = string.format("%s %s %s", client.entity, 'message', message)
+      client:sendToServer(dg)
+      message = nil
+    else
+      local button = controls.getButton(key)
+      if button then Gamestate.keypressed(button) end
+    end
   end
 
   function love.draw()
@@ -167,6 +181,20 @@ if correctVersion then
     end
 
     if debugger.on then debugger:draw() end
+    if typing then
+      local opa = 170
+      local t = 0.1
+      local u = 0.8
+      local x = love.graphics:getWidth()*t
+      local y = love.graphics:getHeight()*u
+      local width = love.graphics:getWidth() - 2*x
+      local height = love.graphics:getHeight()*(1-u)
+      love.graphics.setColor(0,0,0,opa)
+      love.graphics.rectangle('fill', x, y, width, height)
+      love.graphics.setColor(255,255,255,opa)
+      love.graphics.printf(message or '<nil>', x, y, width, 'center')
+      love.graphics.setColor(255, 255, 255, 255)
+    end
   end
 
   -- Override the default screenshot functionality so we can disable the fps before taking it
